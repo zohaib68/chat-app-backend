@@ -6,7 +6,7 @@ import { JwtDbAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) { }
-    @Post()
+    @Post('create')
     createUser(
         @Body() body: CreateUserDto,
     ) {

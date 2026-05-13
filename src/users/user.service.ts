@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './create-users-dto';
 import { UpdateUserDto } from './update-user.dto';
-
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UserService {
     constructor(
@@ -14,13 +14,17 @@ export class UserService {
     async createUser(data: CreateUserDto) {
         const existingUser = await this.findUser({
             email: data.email,
+            userName: data.userName,
         });
 
         if (existingUser) {
             throw new BadRequestException('User already exists');
         }
 
-        return this.userModel.create(data);
+        const hashedPassword = await bcrypt.hash(data.password, 10);
+        data.password = hashedPassword;
+
+        return this.userModel.create({ ...data, currentToken: '' });
     }
 
     async getUsers() {

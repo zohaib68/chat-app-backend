@@ -4,14 +4,17 @@ import {
     UploadedFile,
     UseInterceptors,
     BadRequestException,
+    UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
+import { JwtDbAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('upload')
 export class UploadController {
     constructor(private readonly uploadService: UploadService) { }
 
+    @UseGuards(JwtDbAuthGuard)
     @Post('file')
     @UseInterceptors(
         FileInterceptor('file', {

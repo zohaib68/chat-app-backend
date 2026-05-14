@@ -55,6 +55,10 @@ export class CreateUserDto {
     @MaxLength(100)
     profession?: string;
 
+    @IsOptional()
+    @IsString()
+    currentToken?: string;
+
     // Avatar URL
     @IsOptional()
     @IsUrl()

@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './create-users-dto';
-import { UpdateUserDto } from './update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { SupabaseService } from 'src/supabase/supabase.service';
 
@@ -83,7 +82,7 @@ export class UserService {
     // 🔥 NEW: reusable update method
     async updateUserById(
         id: string,
-        data: Partial<UpdateUserDto>,
+        data: Partial<CreateUserDto>,
         file?: Express.Multer.File,
     ) {
         if (!Object.keys(data).length && !file) {

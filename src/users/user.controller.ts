@@ -12,14 +12,14 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './create-users-dto';
 import { JwtDbAuthGuard } from '../auth/jwt-auth.guard';
 import { Param, Patch } from '@nestjs/common';
-import { UpdateUserDto } from './update-user.dto';
+
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
 
-  @UseGuards(JwtDbAuthGuard)
+  // @UseGuards(JwtDbAuthGuard)
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('avatar', {
@@ -34,7 +34,7 @@ export class UserController {
   )
   updateUser(
     @Param('id') id: string,
-    @Body() body: UpdateUserDto,
+    @Body() body: Partial<CreateUserDto>,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.userService.updateUserById(id, body, file);

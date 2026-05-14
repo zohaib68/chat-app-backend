@@ -42,6 +42,9 @@ export class User {
     // Supabase / Cloud image URL
     @Prop({ default: '' })
     avatar: string;
+
+    @Prop({ default: [] })
+    chats: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

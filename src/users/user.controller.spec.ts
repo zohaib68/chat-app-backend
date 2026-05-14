@@ -13,7 +13,6 @@ describe('UserController', () => {
         getUsers: jest.fn(),
     };
 
-    // Mock guard (always allow access)
     const mockJwtGuard = {
         canActivate: jest.fn(() => true),
     };
@@ -28,7 +27,6 @@ describe('UserController', () => {
                 },
             ],
         })
-            // override guard globally
             .overrideGuard(JwtDbAuthGuard)
             .useValue(mockJwtGuard)
             .compile();
@@ -42,10 +40,10 @@ describe('UserController', () => {
     });
 
     // -----------------------------
-    // CREATE USER TEST
+    // CREATE USER TEST (UPDATED)
     // -----------------------------
     describe('createUser', () => {
-        it('should call userService.createUser with correct data', async () => {
+        it('should call userService.createUser with dto and file', async () => {
             const dto: CreateUserDto = {
                 firstName: 'John',
                 lastName: 'Doe',
@@ -54,19 +52,52 @@ describe('UserController', () => {
                 password: '123456',
             };
 
-            const resultMock = { _id: '1', ...dto };
+            const mockFile: Express.Multer.File = {
+                originalname: 'avatar.png',
+                mimetype: 'image/png',
+                buffer: Buffer.from('fake-image'),
+            } as any;
+
+            const resultMock = {
+                _id: '1',
+                ...dto,
+                avatar: 'https://supabase-url.com/avatar.png',
+            };
 
             mockUserService.createUser.mockResolvedValue(resultMock);
 
-            const result = await controller.createUser(dto);
+            const result = await controller.createUser(dto, mockFile);
 
-            expect(service.createUser).toHaveBeenCalledWith(dto);
+            expect(service.createUser).toHaveBeenCalledWith(dto, mockFile);
+            expect(result).toEqual(resultMock);
+        });
+
+        it('should call userService.createUser without file', async () => {
+            const dto: CreateUserDto = {
+                firstName: 'John',
+                lastName: 'Doe',
+                userName: 'johndoe',
+                email: 'john@gmail.com',
+                password: '123456',
+            };
+
+            const resultMock = {
+                _id: '1',
+                ...dto,
+                avatar: '',
+            };
+
+            mockUserService.createUser.mockResolvedValue(resultMock);
+
+            const result = await controller.createUser(dto, undefined);
+
+            expect(service.createUser).toHaveBeenCalledWith(dto, undefined);
             expect(result).toEqual(resultMock);
         });
     });
 
     // -----------------------------
-    // GET USERS TEST
+    // GET USERS TEST (UNCHANGED)
     // -----------------------------
     describe('getUsers', () => {
         it('should return list of users', async () => {

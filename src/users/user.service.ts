@@ -81,22 +81,76 @@ export class UserService {
     }
 
     // 🔥 NEW: reusable update method
-    async updateUserById(id: string, data: Partial<UpdateUserDto>) {
-        if (!Object.keys(data).length) {
+    async updateUserById(
+        id: string,
+        data: Partial<UpdateUserDto>,
+        file?: Express.Multer.File,
+    ) {
+        if (!Object.keys(data).length && !file) {
             throw new BadRequestException('No data provided for update');
         }
 
-        // optional: prevent email duplication
+        const user = await this.userModel.findById(id);
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        // =========================
+        // 1. EMAIL DUPLICATION CHECK
+        // =========================
         if (data.email) {
             const existing = await this.findUser({ email: data.email });
+
             if (existing && existing._id.toString() !== id) {
                 throw new BadRequestException('Email already in use');
             }
         }
 
+        // =========================
+        // 2. HANDLE AVATAR UPLOAD
+        // =========================
+        let avatarUrl = user.avatar;
+
+        if (file) {
+            const supabase = this.supabaseService.getClient();
+            const bucket = this.supabaseService.getBucket();
+
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `${id}/${Date.now()}.${fileExt}`;
+
+            const { error } = await supabase.storage
+                .from(bucket)
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: true,
+                });
+
+            if (error) {
+                throw new BadRequestException(error.message);
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(fileName);
+
+            avatarUrl = publicUrlData.publicUrl;
+        }
+
+        // =========================
+        // 3. FINAL UPDATE PAYLOAD
+        // =========================
+        const updatePayload = {
+            ...data,
+            avatar: avatarUrl,
+        };
+
+        // =========================
+        // 4. UPDATE USER
+        // =========================
         return this.userModel.findByIdAndUpdate(
             id,
-            { $set: data },
+            { $set: updatePayload },
             {
                 new: true,
                 runValidators: true,

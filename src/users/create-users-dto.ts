@@ -1,21 +1,29 @@
+// create-user.dto.ts
 import {
     IsEmail,
     IsNotEmpty,
+    IsOptional,
     IsString,
+    IsUrl,
+    MaxLength,
     MinLength,
 } from 'class-validator';
 
 export class CreateUserDto {
     @IsString()
     @IsNotEmpty()
+    @MaxLength(50)
     firstName: string;
 
     @IsString()
     @IsNotEmpty()
+    @MaxLength(50)
     lastName: string;
 
     @IsString()
     @IsNotEmpty()
+    @MinLength(3)
+    @MaxLength(30)
     userName: string;
 
     @IsEmail()
@@ -25,4 +33,30 @@ export class CreateUserDto {
     @IsNotEmpty()
     @MinLength(6)
     password: string;
+
+    // Optional profile fields
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    description?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    city?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    country?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    profession?: string;
+
+    // Avatar URL
+    @IsOptional()
+    @IsUrl()
+    avatar?: string;
 }

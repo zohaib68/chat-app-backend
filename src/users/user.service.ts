@@ -5,13 +5,19 @@ import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './create-users-dto';
 import { UpdateUserDto } from './update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { SupabaseService } from 'src/supabase/supabase.service';
+
+
+
+
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
+        private supabaseService: SupabaseService
     ) { }
 
-    async createUser(data: CreateUserDto) {
+    async createUser(data: CreateUserDto, file?: Express.Multer.File) {
         const existingUser = await this.findUser({
             email: data.email,
             userName: data.userName,
@@ -21,10 +27,44 @@ export class UserService {
             throw new BadRequestException('User already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        data.password = hashedPassword;
+        // 1. Upload avatar if exists
+        let avatarUrl = '';
 
-        return this.userModel.create({ ...data, currentToken: '' });
+        if (file) {
+            const supabase = this.supabaseService.getClient();
+            const bucket = this.supabaseService.getBucket();
+
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `avatars/${Date.now()}.${fileExt}`;
+
+            const { error } = await supabase.storage
+                .from(bucket)
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: true,
+                });
+
+            if (error) {
+                throw new BadRequestException(error.message);
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(fileName);
+
+            avatarUrl = publicUrlData.publicUrl;
+        }
+
+        // 2. Hash password
+        const hashedPassword = await bcrypt.hash(data.password, 10);
+
+        // 3. Create user
+        return this.userModel.create({
+            ...data,
+            password: hashedPassword,
+            avatar: avatarUrl, // 👈 store Supabase URL
+            currentToken: '',
+        });
     }
 
     async getUsers() {
@@ -62,5 +102,36 @@ export class UserService {
                 runValidators: true,
             },
         );
+    }
+    async uploadAvatar(file: Express.Multer.File, userId: string) {
+        const supabase = this.supabaseService.getClient();
+        const bucket = this.supabaseService.getBucket();
+
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+        // 1. Upload to Supabase
+        const { error } = await supabase.storage
+            .from(bucket)
+            .upload(fileName, file.buffer, {
+                contentType: file.mimetype,
+                upsert: true,
+            });
+
+        if (error) throw new Error(error.message);
+
+        // 2. Get public URL
+        const { data } = supabase.storage
+            .from(bucket)
+            .getPublicUrl(fileName);
+
+        const avatarUrl = data.publicUrl;
+
+        // 3. Save to MongoDB
+        await this.userModel.findByIdAndUpdate(userId, {
+            avatar: avatarUrl,
+        });
+
+        return { avatar: avatarUrl };
     }
 }

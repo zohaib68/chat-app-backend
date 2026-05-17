@@ -196,4 +196,52 @@ export class UserService {
 
         return { avatar: avatarUrl };
     }
+
+    async searchUsers(filters: {
+        name?: string;
+        profession?: string;
+        city?: string;
+        country?: string;
+        date?: string;
+    }) {
+        const query: any = {};
+
+        // 1. exact or indexed fields (matching case-insensitively for premium user matching)
+        if (filters.profession) {
+            query.profession = { $regex: new RegExp(`^${filters.profession}$`, 'i') };
+        }
+        if (filters.city) {
+            query.city = { $regex: new RegExp(`^${filters.city}$`, 'i') };
+        }
+        if (filters.country) {
+            query.country = { $regex: new RegExp(`^${filters.country}$`, 'i') };
+        }
+
+        // 2. Global search: matches firstName, lastName, userName, email
+        if (filters.name) {
+            const searchRegex = new RegExp(filters.name, 'i');
+            query.$or = [
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { userName: searchRegex },
+                { email: searchRegex },
+            ];
+        }
+
+        // 3. Registration date query
+        if (filters.date) {
+            const startDate = new Date(filters.date);
+            startDate.setHours(0, 0, 0, 0);
+
+            const endDate = new Date(filters.date);
+            endDate.setHours(23, 59, 59, 999);
+
+            query.createdAt = {
+                $gte: startDate,
+                $lte: endDate,
+            };
+        }
+
+        return this.userModel.find(query);
+    }
 }

@@ -33,13 +33,13 @@ export class User {
     @Prop({ default: '' })
     description: string;
 
-    @Prop({ default: '' })
+    @Prop({ default: '', index: true })
     city: string;
 
-    @Prop({ default: '' })
+    @Prop({ default: '', index: true })
     country: string;
 
-    @Prop({ default: '' })
+    @Prop({ default: '', index: true })
     profession: string;
 
     // Supabase / Cloud image URL

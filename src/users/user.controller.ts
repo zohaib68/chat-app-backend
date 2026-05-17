@@ -6,12 +6,13 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
-import { CreateUserDto } from './create-users-dto';
+import { CreateUserDto, UpdateUserDto } from './create-users-dto';
 import { JwtDbAuthGuard } from '../auth/jwt-auth.guard';
-import { Param, Patch } from '@nestjs/common';
+import { Param, Patch, NotFoundException } from '@nestjs/common';
 
 
 @Controller('users')
@@ -19,7 +20,7 @@ export class UserController {
   constructor(private readonly userService: UserService) { }
 
 
-  // @UseGuards(JwtDbAuthGuard)
+  @UseGuards(JwtDbAuthGuard)
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('avatar', {
@@ -34,7 +35,7 @@ export class UserController {
   )
   updateUser(
     @Param('id') id: string,
-    @Body() body: Partial<CreateUserDto>,
+    @Body() body: UpdateUserDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.userService.updateUserById(id, body, file);
@@ -59,6 +60,32 @@ export class UserController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.userService.createUser(body, file);
+  }
+
+  @UseGuards(JwtDbAuthGuard)
+  @Get('me')
+  async getMe(@Req() req) {
+    const user = await this.userService.findUserById(req.user._id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const u = user as any;
+    return {
+      id: u._id.toString(),
+      firstName: u.firstName,
+      lastName: u.lastName,
+      userName: u.userName,
+      email: u.email,
+      description: u.description || '',
+      country: u.country || '',
+      city: u.city || '',
+      profilePicture: u.avatar || '',
+      profession: u.profession || '',
+      online: u.online ?? false,
+      lastSeen: u.lastSeen ?? null,
+      createdAt: u.createdAt,
+      phone: u.phone || '',
+    };
   }
 
   @UseGuards(JwtDbAuthGuard)

@@ -48,6 +48,7 @@ describe('UserService', () => {
                 userName: 'johndoe',
                 email: 'test@gmail.com',
                 password: '123456',
+                phone: '1234567890',
             });
 
             expect(model.findOne).toHaveBeenCalledWith({
@@ -68,6 +69,7 @@ describe('UserService', () => {
                     userName: 'johndoe',
                     email: 'test@gmail.com',
                     password: '123456',
+                    phone: '1234567890',
                 }),
             ).rejects.toThrow(BadRequestException);
         });

@@ -50,6 +50,7 @@ describe('UserController', () => {
                 userName: 'johndoe',
                 email: 'john@gmail.com',
                 password: '123456',
+                phone: '1234567890',
             };
 
             const mockFile: Express.Multer.File = {
@@ -79,6 +80,7 @@ describe('UserController', () => {
                 userName: 'johndoe',
                 email: 'john@gmail.com',
                 password: '123456',
+                phone: '1234567890',
             };
 
             const resultMock = {

@@ -17,7 +17,10 @@ export class User {
     @Prop({ required: true, unique: true, trim: true })
     email: string;
 
-    @Prop({ required: true, select: false })
+    @Prop({ required: true, unique: true, trim: true })
+    phone: string;
+
+    @Prop({ required: true })
     password: string;
 
     @Prop({ default: '' })
@@ -45,6 +48,12 @@ export class User {
 
     @Prop({ default: [] })
     chats: string[];
+
+    @Prop({ default: false })
+    online: boolean;
+
+    @Prop({ type: Date, default: null })
+    lastSeen: Date | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

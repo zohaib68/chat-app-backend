@@ -7,6 +7,7 @@ import { ChatGateway } from '../ws/ws-chat-gateway';
 import { Chat, ChatSchema } from './chat.schema';
 import { User, UserSchema } from '../users/user.schema';
 import { SupabaseService } from 'src/supabase/supabase.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { SupabaseService } from 'src/supabase/supabase.service';
             { name: Chat.name, schema: ChatSchema },
             { name: User.name, schema: UserSchema },
         ]),
+        AuthModule,
     ],
     providers: [ChatService, ChatGateway, SupabaseService],
     exports: [ChatService],

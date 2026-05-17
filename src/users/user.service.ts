@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
-import { CreateUserDto } from './create-users-dto';
+import { CreateUserDto, UpdateUserDto } from './create-users-dto';
 import * as bcrypt from 'bcrypt';
 import { SupabaseService } from 'src/supabase/supabase.service';
 
@@ -79,6 +79,10 @@ export class UserService {
         return this.userModel.findOne(filter);
     }
 
+    async findUserById(id: string) {
+        return this.userModel.findById(id);
+    }
+
     // 🔥 NEW: reusable update method
     async updateUserById(
         id: string,
@@ -134,6 +138,11 @@ export class UserService {
                 .getPublicUrl(fileName);
 
             avatarUrl = publicUrlData.publicUrl;
+        }
+
+        // Hash password if updating password
+        if (data.password) {
+            data.password = await bcrypt.hash(data.password, 10);
         }
 
         // =========================

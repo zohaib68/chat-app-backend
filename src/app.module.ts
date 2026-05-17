@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
+import { ChatModule } from './chats/chat.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { UploadModule } from './upload/upload.module';
     MongooseModule.forRoot(process.env.MONGODB_URI as string),
     UsersModule,
     AuthModule,
-    UploadModule
+    UploadModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

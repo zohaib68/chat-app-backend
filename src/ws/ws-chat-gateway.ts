@@ -8,7 +8,7 @@ import {
     OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import type { AuthenticatedSocket } from '../types/socket.types';
 import { ChatService } from '../chats/chat.service';
 import { WsJwtGuard } from './ws-chat-jwt-auth-guard';
@@ -27,6 +27,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server;
 
     constructor(
+        @Inject(forwardRef(() => ChatService))
         private chatService: ChatService,
         private jwtService: JwtService,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
@@ -111,36 +112,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         const senderId = client.user._id.toString();
 
-        // 1. find or create chat
+        // 1. Find or create chat
         const chat = await this.chatService.findOrCreateChat(
             senderId,
             payload.receiverId,
         );
 
-        // 2. create message object
-        const message = {
+        // 2. Save message (this automatically handles saving, unread count increments,
+        // and emits the message:new and conversation:updated Socket.IO events in real-time)
+        const updatedChat = await this.chatService.addMessage(chat._id.toString(), {
+            senderId,
+            receiverId: payload.receiverId,
             content: payload.content,
             attachment: payload.attachment || '',
             mimeType: payload.mimeType || '',
-            senderId,
-            createdAt: new Date(),
-            receiverId: payload.receiverId,
-        };
-
-        // 3. save message
-        await this.chatService.addMessage(chat._id.toString(), message);
-
-        // 4. send ONLY to receiver room
-        this.server.to(payload.receiverId).emit('receiveMessage', {
-            chatId: chat._id,
-            message,
         });
 
-        // optional: also send back to sender (sync UI)
-        this.server.to(senderId).emit('receiveMessage', {
-            chatId: chat._id,
-            message,
-        });
+        // Emit receiveMessage for backwards compatibility with any existing client code
+        if (updatedChat && updatedChat.messages.length > 0) {
+            const lastMsg = updatedChat.messages[updatedChat.messages.length - 1];
+            const msgPayload = {
+                content: lastMsg.content,
+                attachment: lastMsg.attachment || '',
+                mimeType: lastMsg.mimeType || '',
+                senderId,
+                createdAt: lastMsg.createdAt,
+                receiverId: payload.receiverId,
+            };
+
+            this.server.to(payload.receiverId).emit('receiveMessage', {
+                chatId: chat._id,
+                message: msgPayload,
+            });
+
+            this.server.to(senderId).emit('receiveMessage', {
+                chatId: chat._id,
+                message: msgPayload,
+            });
+        }
 
         return { success: true };
     }

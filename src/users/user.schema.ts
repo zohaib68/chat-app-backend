@@ -49,6 +49,20 @@ export class User {
     @Prop({ default: [] })
     chats: string[];
 
+    @Prop({
+      type: [
+        {
+          chatId: String,
+          count: Number,
+        },
+      ],
+      default: [],
+    })
+    unreadCounts: {
+      chatId: string;
+      count: number;
+    }[];
+
     @Prop({ default: false })
     online: boolean;
 

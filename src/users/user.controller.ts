@@ -88,7 +88,6 @@ export class UserController {
     };
   }
 
-  @UseGuards(JwtDbAuthGuard)
   @Get('search')
   async searchUsers(
     @Query('name') name?: string,
@@ -143,7 +142,6 @@ export class UserController {
     };
   }
 
-  @UseGuards(JwtDbAuthGuard)
   @Get()
   getUsers() {
     return this.userService.getUsers();

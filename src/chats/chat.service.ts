@@ -175,6 +175,7 @@ export class ChatService {
                         profilePicture: otherParticipant.profilePicture || '',
                         profession: otherParticipant.profession || '',
                         online: isOnline,
+                        lastSeen: otherUserObj?.lastSeen ? otherUserObj.lastSeen.toISOString() : undefined,
                     },
                     lastMessage: {
                         content: messageDto.content,
@@ -222,8 +223,10 @@ export class ChatService {
         });
         const otherUsers = await this.userModel.find({ _id: { $in: otherUserIds } });
         const onlineMap = new Map<string, boolean>();
+        const lastSeenMap = new Map<string, Date | null>();
         for (const u of otherUsers) {
             onlineMap.set(u._id.toString(), u.online ?? false);
+            lastSeenMap.set(u._id.toString(), u.lastSeen ?? null);
         }
 
         return chats.map((chat) => {
@@ -231,6 +234,7 @@ export class ChatService {
             const unreadEntry = user?.unreadCounts?.find(uc => uc.chatId === chat._id.toString());
             const unreadCount = unreadEntry ? unreadEntry.count : 0;
             const isOnline = onlineMap.get(otherParticipant.userId) ?? false;
+            const lastSeenDate = lastSeenMap.get(otherParticipant.userId);
 
             return {
                 id: chat._id.toString(),
@@ -243,6 +247,7 @@ export class ChatService {
                     profilePicture: otherParticipant.profilePicture || '',
                     profession: otherParticipant.profession || '',
                     online: isOnline,
+                    lastSeen: lastSeenDate ? lastSeenDate.toISOString() : undefined,
                 },
                 lastMessage: chat.lastMessage ? {
                     content: chat.lastMessage.content,

@@ -116,7 +116,6 @@ export class UserController {
     }));
   }
 
-  @UseGuards(JwtDbAuthGuard)
   @Get(':id')
   async getUserById(@Param('id') id: string) {
     const user = await this.userService.findUserById(id);
